@@ -1,1 +1,144 @@
+github.dev
 
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>MONK PLAYS - YouTube Opener</title>
+<style>
+body {
+  margin: 0;
+  background: #101010;
+  color: white;
+  font-family: Arial, sans-serif;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
+}
+.card {
+  width: 88%;
+  max-width: 420px;
+  text-align: center;
+  background: #202020;
+  padding: 25px;
+  border-radius: 18px;
+}
+h1 { color: #ff3333; }
+p { color: #bbb; }
+input {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 15px;
+  border: 1px solid #555;
+  border-radius: 9px;
+  background: #111;
+  color: white;
+  font-size: 15px;
+  margin: 12px 0;
+}
+button {
+  width: 100%;
+  padding: 15px;
+  border: 0;
+  border-radius: 9px;
+  background: #ff3333;
+  color: white;
+  font-size: 17px;
+  font-weight: bold;
+  margin-top: 10px;
+}
+#result, #openArea { display: none; }
+a { color: #70aaff; overflow-wrap: anywhere; }
+</style>
+</head>
+<body>
+<div class="card">
+  <h1>MONK PLAYS</h1>
+  <p>YouTube Livestream Opener</p>
+
+  <div id="generator">
+    <p>Paste your YouTube livestream link</p>
+    <input id="videoInput" placeholder="https://youtube.com/watch?v=...">
+    <button onclick="makeLink()">SNAP</button>
+    <div id="result">
+      <p>Your Instagram Story link:</p>
+      <input id="shareLink" readonly>
+      <button onclick="copyLink()">COPY LINK</button>
+    </div>
+  </div>
+
+  <div id="openArea">
+    <h2>You're going to YouTube!</h2>
+    <p>Tap below to open this livestream in the YouTube app.</p>
+    <button onclick="openYouTube()">OPEN IN YOUTUBE</button>
+    <p id="fallback"></p>
+  </div>
+</div>
+
+<script>
+let videoId = "";
+
+function getVideoId(url) {
+  try {
+    const u = new URL(url);
+    if (u.hostname.includes("youtu.be"))
+      return u.pathname.slice(1);
+    if (u.searchParams.get("v"))
+      return u.searchParams.get("v");
+    const parts = u.pathname.split("/");
+    if (["live", "shorts", "embed"].includes(parts[1]))
+      return parts[2];
+  } catch(e) {}
+  return "";
+}
+
+function makeLink() {
+  const id = getVideoId(document.getElementById("videoInput").value.trim());
+  if (!/^[a-zA-Z0-9_-]{11}$/.test(id)) {
+    alert("Please paste a valid YouTube video or livestream link.");
+    return;
+  }
+  const link = location.origin + location.pathname + "?v=" + id;
+  document.getElementById("shareLink").value = link;
+  document.getElementById("result").style.display = "block";
+}
+
+async function copyLink() {
+  const field = document.getElementById("shareLink");
+  try {
+    await navigator.clipboard.writeText(field.value);
+    alert("Link copied!");
+  } catch(e) {
+    field.select();
+    document.execCommand("copy");
+    alert("Link copied!");
+  }
+}
+
+function openYouTube() {
+  const webUrl = "https://www.youtube.com/watch?v=" + videoId;
+  const ua = navigator.userAgent || "";
+  if (/Android/i.test(ua)) {
+    location.href = "intent://www.youtube.com/watch?v=" + videoId +
+      "#Intent;scheme=https;package=com.google.android.youtube;end";
+  } else if (/iPhone|iPad|iPod/i.test(ua)) {
+    location.href = "youtube://www.youtube.com/watch?v=" + videoId;
+    setTimeout(() => { location.href = webUrl; }, 1200);
+  } else {
+    location.href = webUrl;
+  }
+  document.getElementById("fallback").innerHTML =
+    '<a href="' + webUrl + '">If the app does not open, tap here for YouTube.</a>';
+}
+
+videoId = new URLSearchParams(location.search).get("v") || "";
+if (/^[a-zA-Z0-9_-]{11}$/.test(videoId)) {
+  document.getElementById("generator").style.display = "none";
+  document.getElementById("openArea").style.display = "block";
+  setTimeout(openYouTube, 700);
+}
+</script>
+</body>
+</html>
